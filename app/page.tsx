@@ -182,7 +182,8 @@ export default function MobileCameraStream() {
     const startCamera = async () => {
       try {
         // 1️⃣ OPEN WEBSOCKET
-        const ws = new WebSocket("ws://192.168.0.106:8000/mobile-stream");
+        // const ws = new WebSocket("ws://192.168.0.106:8000/mobile-stream");
+        const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL!);
         wsRef.current = ws;
 
         ws.onopen = () => {
