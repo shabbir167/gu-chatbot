@@ -171,122 +171,130 @@ import { useEffect, useRef, useState } from "react";
 export default function MobileCameraStream() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const outputRef = useRef<HTMLImageElement>(null);
-
   const wsRef = useRef<WebSocket | null>(null);
+
+  const [facingMode, setFacingMode] = useState<"user" | "environment">(
+    "environment",
+  );
+
   const [error, setError] = useState<string | null>(null);
+
+  let streamRef = useRef<MediaStream | null>(null);
+
+  // 🎥 START CAMERA FUNCTION
+  const startCamera = async (mode: "user" | "environment") => {
+    try {
+      setError(null);
+
+      // stop previous stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: mode,
+        },
+        audio: false,
+      });
+
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError("Camera access failed");
+    }
+  };
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
-    const startCamera = async () => {
-      try {
-        // 1️⃣ OPEN WEBSOCKET
-        // const ws = new WebSocket("ws://192.168.0.106:8000/mobile-stream");
-        const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL!);
-        wsRef.current = ws;
+    const init = async () => {
+      // 🔌 WebSocket
+      const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL!);
+      wsRef.current = ws;
 
-        ws.onopen = () => {
-          console.log("WebSocket connected");
-        };
+      ws.onerror = () => setError("WebSocket failed");
 
-        ws.onerror = () => {
-          setError("WebSocket connection failed");
-        };
+      await startCamera(facingMode);
 
-        // 2️⃣ REQUEST CAMERA (IMPORTANT FIXED PART)
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment", // mobile back camera (better for CCTV)
-          },
-          audio: false,
-        });
+      const ctx = canvasRef.current?.getContext("2d");
 
-        if (!videoRef.current) return;
-
-        videoRef.current.srcObject = stream;
-
-        // MUST WAIT FOR VIDEO TO LOAD
-        await videoRef.current.play();
-
+      // 📤 SEND FRAMES
+      interval = setInterval(() => {
+        const video = videoRef.current;
         const canvas = canvasRef.current;
-        const ctx = canvas?.getContext("2d");
+        const ws = wsRef.current;
 
-        // 3️⃣ SEND FRAMES
-        interval = setInterval(() => {
-          const video = videoRef.current;
-          const ws = wsRef.current;
+        if (!video || !canvas || !ctx) return;
+        if (!ws || ws.readyState !== 1) return;
 
-          if (!video || !canvas || !ctx) return;
-          if (!ws || ws.readyState !== 1) return;
+        if (video.videoWidth === 0 || video.videoHeight === 0) return;
 
-          if (video.videoWidth === 0 || video.videoHeight === 0) return;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
 
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-          canvas.toBlob(
-            (blob) => {
-              if (blob && ws.readyState === 1) {
-                ws.send(blob);
-              }
-            },
-            "image/jpeg",
-            0.7,
-          );
-        }, 120);
-
-        // 4️⃣ RECEIVE AI OUTPUT
-        ws.onmessage = (event) => {
-          if (outputRef.current) {
-            const url = URL.createObjectURL(event.data);
-            outputRef.current.src = url;
-          }
-        };
-      } catch (err: any) {
-        console.error(err);
-        setError("Camera permission denied or not available");
-      }
+        canvas.toBlob(
+          (blob) => {
+            if (blob && ws.readyState === 1) {
+              ws.send(blob);
+            }
+          },
+          "image/jpeg",
+          0.7,
+        );
+      }, 120);
     };
 
-    startCamera();
+    init();
 
     return () => {
       if (interval) clearInterval(interval);
       wsRef.current?.close();
+      streamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, []);
 
+  // 🔄 SWITCH CAMERA
+  const switchCamera = async () => {
+    const newMode = facingMode === "user" ? "environment" : "user";
+    setFacingMode(newMode);
+    await startCamera(newMode);
+  };
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center p-4">
-      <h1 className="text-2xl font-bold mb-4">📱 Live AI Camera Stream</h1>
+      <h1 className="text-xl font-bold mb-3">📱 AI Camera Stream</h1>
 
-      {error && <div className="bg-red-600 p-2 rounded mb-4">{error}</div>}
+      {error && <div className="bg-red-600 p-2 rounded mb-3">{error}</div>}
 
-      {/* LIVE CAMERA */}
+      {/* VIDEO */}
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted
-        className="w-[320px] border border-white rounded"
+        className="w-[320px] border rounded"
       />
 
-      {/* HIDDEN CANVAS */}
+      {/* CANVAS */}
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* AI OUTPUT */}
-      <img
-        ref={outputRef}
-        className="w-[400px] mt-4 border border-green-500 rounded"
-        alt="AI Output"
-      />
-
-      <p className="text-gray-400 mt-3 text-sm">
-        If camera doesn't open → check browser permissions
-      </p>
+      {/* BUTTONS */}
+      <div className="flex gap-3 mt-4">
+        <button
+          onClick={switchCamera}
+          className="bg-blue-600 px-4 py-2 rounded"
+        >
+          🔄 Switch Camera
+        </button>
+      </div>
     </div>
   );
 }
