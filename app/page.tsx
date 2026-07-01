@@ -136,65 +136,87 @@
 
 
 
-
-
-
 "use client";
 
+import { useEffect } from "react";
 import Script from "next/script";
 
 export default function Home() {
+  useEffect(() => {
+    // Create Zapier chatbot element
+    const chatbot = document.createElement("zapier-interfaces-chatbot-embed");
+
+    chatbot.setAttribute("chatbot-id", "cmqf0vvaz001j14o6a39p20wi");
+    chatbot.setAttribute("is-popup", "true");
+
+    document.body.appendChild(chatbot);
+
+    return () => {
+      chatbot.remove();
+    };
+  }, []);
+
+  const openChat = () => {
+    const chatbot = document.querySelector(
+      "zapier-interfaces-chatbot-embed",
+    ) as any;
+
+    if (!chatbot) return;
+
+    // Wait until the web component is ready
+    setTimeout(() => {
+      try {
+        const shadow = chatbot.shadowRoot;
+
+        if (shadow) {
+          const button = shadow.querySelector("button") as HTMLButtonElement;
+
+          if (button) {
+            button.click();
+          }
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    }, 300);
+  };
+
   return (
     <>
-      {/* Load Zapier Chatbot Script */}
+      {/* Load Zapier Web Component */}
       <Script
         src="https://interfaces.zapier.com/assets/web-components/zapier-interfaces/zapier-interfaces.esm.js"
-        type="module"
         strategy="afterInteractive"
+        type="module"
       />
 
-      <main className="min-h-screen bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-800 text-white">
-        {/* Hero Section */}
+      <main className="min-h-screen bg-gradient-to-br from-indigo-700 via-blue-700 to-purple-800 text-white">
+        {/* Hero */}
         <section className="flex min-h-screen items-center justify-center px-6">
           <div className="max-w-5xl text-center">
-
-            <div className="inline-flex items-center rounded-full bg-white/20 px-5 py-2 backdrop-blur-md">
+            <span className="rounded-full bg-white/20 px-5 py-2 text-sm backdrop-blur-md">
               🤖 AI Assistant Available 24/7
-            </div>
+            </span>
 
-            <h1 className="mt-8 text-5xl font-extrabold md:text-7xl">
+            <h1 className="mt-8 text-5xl font-extrabold leading-tight md:text-7xl">
               Welcome to
               <br />
-              <span className="text-yellow-300">
-                AI Chat Assistant
-              </span>
+              <span className="text-yellow-300">AI Chat Assistant</span>
             </h1>
 
-            <p className="mx-auto mt-8 max-w-2xl text-lg text-gray-200 md:text-xl">
-              Ask questions about admissions, eligibility, fee structure,
-              scholarships, merit lists, or any university-related information.
-              Our AI assistant is always available to help.
+            <p className="mx-auto mt-8 max-w-3xl text-lg text-gray-200 md:text-xl">
+              Get instant answers about admissions, eligibility, scholarships,
+              fee structures, merit lists, and more. Chat with our AI assistant
+              anytime.
             </p>
 
             <div className="mt-12 flex flex-wrap justify-center gap-5">
-              <button
-                onClick={() => {
-                  // Opens the Zapier popup by clicking its floating button
-                  const chatbot = document.querySelector(
-                    "zapier-interfaces-chatbot-embed"
-                  ) as any;
-
-                  if (chatbot?.shadowRoot) {
-                    const button =
-                      chatbot.shadowRoot.querySelector("button");
-
-                    button?.click();
-                  }
-                }}
-                className="rounded-xl bg-white px-8 py-4 text-lg font-bold text-blue-700 transition-all duration-300 hover:scale-105 hover:shadow-xl"
+              {/* <button
+                onClick={openChat}
+                className="rounded-xl bg-white px-8 py-4 text-lg font-bold text-blue-700 shadow-xl transition duration-300 hover:scale-105"
               >
                 💬 Start Chat
-              </button>
+              </button> */}
 
               <button className="rounded-xl border border-white px-8 py-4 text-lg transition hover:bg-white/10">
                 Learn More
@@ -206,22 +228,18 @@ export default function Home() {
         {/* Features */}
         <section className="bg-white py-20 text-black">
           <div className="mx-auto max-w-6xl px-6">
-
             <h2 className="mb-14 text-center text-4xl font-bold">
-              Why Use Our AI Assistant?
+              Why Choose Our AI Assistant?
             </h2>
 
             <div className="grid gap-8 md:grid-cols-3">
-
               <div className="rounded-2xl border bg-white p-8 shadow-xl transition hover:-translate-y-2">
                 <div className="text-5xl">🎓</div>
 
-                <h3 className="mt-5 text-2xl font-bold">
-                  Admission Guidance
-                </h3>
+                <h3 className="mt-5 text-2xl font-bold">Admission Guidance</h3>
 
                 <p className="mt-4 text-gray-600">
-                  Get instant answers regarding admissions, eligibility,
+                  Ask anything related to admissions, eligibility, departments,
                   required documents, and application procedures.
                 </p>
               </div>
@@ -229,43 +247,50 @@ export default function Home() {
               <div className="rounded-2xl border bg-white p-8 shadow-xl transition hover:-translate-y-2">
                 <div className="text-5xl">⚡</div>
 
-                <h3 className="mt-5 text-2xl font-bold">
-                  Instant Responses
-                </h3>
+                <h3 className="mt-5 text-2xl font-bold">Instant Replies</h3>
 
                 <p className="mt-4 text-gray-600">
-                  No waiting. Receive accurate answers within seconds,
-                  anytime.
+                  Get answers within seconds without waiting for office hours.
                 </p>
               </div>
 
               <div className="rounded-2xl border bg-white p-8 shadow-xl transition hover:-translate-y-2">
                 <div className="text-5xl">🤖</div>
 
-                <h3 className="mt-5 text-2xl font-bold">
-                  AI Powered
-                </h3>
+                <h3 className="mt-5 text-2xl font-bold">Available 24/7</h3>
 
                 <p className="mt-4 text-gray-600">
-                  Available 24/7 to answer student queries regarding
-                  admissions, fees, scholarships, and much more.
+                  Our AI assistant is available every day to help students
+                  whenever they need assistance.
                 </p>
               </div>
-
             </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="bg-gradient-to-r from-blue-700 to-purple-700 py-24">
+          <div className="mx-auto max-w-4xl text-center px-6">
+            <h2 className="text-4xl font-bold">Ready to Ask Your Questions?</h2>
+
+            <p className="mt-5 text-lg text-gray-200">
+              Click the button below and start chatting with our AI Assistant
+              instantly.
+            </p>
+
+            {/* <button
+              onClick={openChat}
+              className="mt-10 rounded-xl bg-white px-10 py-5 text-xl font-bold text-blue-700 shadow-xl transition hover:scale-105"
+            >
+              🚀 Start Chatting
+            </button> */}
           </div>
         </section>
 
         {/* Footer */}
         <footer className="border-t border-white/20 py-8 text-center text-gray-300">
-          © 2026 AI Chat Assistant. All Rights Reserved.
+          © 2026 AI Chat Assistant • Powered by Zapier Interfaces
         </footer>
-
-        {/* Zapier Chatbot */}
-        <zapier-interfaces-chatbot-embed
-          is-popup="true"
-          chatbot-id="cmqf0vvaz001j14o6a39p20wi"
-        ></zapier-interfaces-chatbot-embed>
       </main>
     </>
   );
